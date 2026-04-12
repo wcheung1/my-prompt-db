@@ -3,26 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Advanced Prompt Database</title>
+    <title>My AI Copilot Prompt Database</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; max-width: 900px; margin: 0 auto; color: #333; }
-        
-        /* 頁面大標題設計 */
         .page-title-container { text-align: center; margin-bottom: 30px; }
         #page-title-text { color: #2c3e50; font-size: 2em; font-weight: bold; cursor: pointer; padding: 5px 15px; border-radius: 8px; transition: background 0.2s; }
         #page-title-text:hover { background-color: #e0e6ed; }
         #page-title-input { font-size: 2em; font-weight: bold; text-align: center; color: #2c3e50; border: 2px dashed #3498db; border-radius: 8px; padding: 5px; width: 80%; display: none; margin: 0 auto; box-sizing: border-box; }
-
-        /* 雲端狀態燈 */
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
         .online { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
         #cloud-status { font-size: 0.8em; color: #7f8c8d; margin-top: 5px; display: none; }
 
-        /* 設定彈窗 (Setup Overlay) */
         #setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .setup-box { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; }
         .setup-box h2 { margin-top: 0; color: #2c3e50; }
@@ -36,38 +31,29 @@
         .btn-success { background-color: #2ecc71; }
         .btn-success:hover { background-color: #27ae60; }
         .btn-secondary { background-color: #7f8c8d; }
+        .btn-ai { background: linear-gradient(45deg, #8e44ad, #9b59b6); color: white; }
+        .btn-ai:hover { background: linear-gradient(45deg, #732d91, #8e44ad); }
         
-        /* 分類與卡片共用 Focus 狀態 */
         .category-header:focus, .card-header:focus { outline: 3px dashed #3498db; outline-offset: -3px; }
-        
-        /* 大分類 (Topic) 設計 */
         .category-box { border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; background: white; }
         .category-header { display: flex; align-items: center; padding: 15px 20px; cursor: pointer; font-size: 1.2em; font-weight: bold; color: #2c3e50; transition: filter 0.2s; user-select: none; }
         .category-header:hover { filter: brightness(0.95); }
         .category-body { display: none; padding: 15px; background-color: #ffffff; }
         .category-body.open { display: block; }
         
-        /* Prompt 卡片設計 */
         .prompt-card { border-radius: 6px; margin-bottom: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05); }
         .card-header { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; transition: filter 0.2s; user-select: none; }
         .card-header:hover { filter: brightness(0.95); }
         
-        /* 文字與輸入框 */
         .title-text { flex-grow: 1; font-size: 1.05em; font-weight: bold; color: #34495e; margin: 0; display: flex; align-items: center; gap: 10px; pointer-events: none; }
         .arrow-icon { font-size: 0.8em; color: #555; transition: transform 0.2s; pointer-events: none; }
         .open .arrow-icon { transform: rotate(90deg); }
         
         .edit-input { flex-grow: 1; font-size: 1.05em; font-weight: bold; padding: 5px; border: 2px dashed #3498db; border-radius: 4px; display: none; width: 100%; box-sizing: border-box; }
-        .edit-input::placeholder { color: #95a5a6; font-weight: normal; }
-        
-        /* 隱藏/展開內容 */
         .card-body { display: none; padding: 15px; background-color: #fff; border-top: 1px solid rgba(0,0,0,0.05); }
         .card-body.open { display: block; }
-        
         .content-display { white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #eee; font-size: 0.95em; line-height: 1.5; color: #2d3436; }
-        textarea { width: 100%; height: 150px; padding: 12px; border: 2px dashed #3498db; border-radius: 5px; resize: vertical; font-family: inherit; font-size: 0.95em; box-sizing: border-box; display: none; }
-        textarea::placeholder { color: #95a5a6; }
-        
+        textarea { width: 100%; height: 150px; padding: 12px; border: 2px dashed #3498db; border-radius: 5px; resize: vertical; font-family: inherit; font-size: 0.95em; box-sizing: border-box; display: none; margin-top:10px;}
         .action-bar { margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
     </style>
 </head>
@@ -75,23 +61,24 @@
 
     <div id="setup-overlay">
         <div class="setup-box">
-            <h2>🔐 首次雲端設定</h2>
-            <p style="font-size: 0.85em; color: #666;">請填入 Firebase Project Settings 中的資料：</p>
-            <input type="text" id="conf-apiKey" placeholder="apiKey">
-            <input type="text" id="conf-databaseURL" placeholder="databaseURL (例如 https://...)">
-            <input type="text" id="conf-projectId" placeholder="projectId">
+            <h2>🔐 首次雲端與 AI 設定</h2>
+            <p style="font-size: 0.85em; color: #666;">Firebase 雲端資料庫設定：</p>
+            <input type="text" id="conf-apiKey" placeholder="Firebase apiKey">
+            <input type="text" id="conf-databaseURL" placeholder="Firebase databaseURL">
+            <input type="text" id="conf-projectId" placeholder="Firebase projectId">
             <input type="password" id="conf-secretKey" placeholder="自訂私隱密碼 (用嚟鎖住你嘅專屬數據)">
-            <button class="btn-success" style="width: 100%; margin-top: 15px;" onclick="saveConfig()">🚀 開始同步數據</button>
-            <p style="font-size: 0.75em; color: #999; margin-top: 10px;">* 資料會儲存在此瀏覽器，只需輸入一次。</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            <p style="font-size: 0.85em; color: #666;">OpenRouter AI 設定 (用於智能優化)：</p>
+            <input type="password" id="conf-openRouterKey" placeholder="OpenRouter API Key (sk-or-...)">
+            <button class="btn-success" style="width: 100%; margin-top: 15px;" onclick="saveConfig()">🚀 開始同步及啟用 AI</button>
+            <p style="font-size: 0.75em; color: #999; margin-top: 10px;">* 資料只儲存於本地瀏覽器，極度安全。</p>
         </div>
     </div>
 
     <div class="page-title-container">
-        <span id="page-title-text" ondblclick="editPageTitle()" title="Double Click 更改標題">🧠 My Prompt Database</span>
-        <input type="text" id="page-title-input" onblur="savePageTitle()" onkeydown="if(event.key==='Enter') savePageTitle()" placeholder="請輸入資料庫名稱...">
-        <div id="cloud-status">
-            <span class="status-dot online"></span> 雲端同步中
-        </div>
+        <span id="page-title-text" ondblclick="editPageTitle()" title="Double Click 更改標題">🧠 My AI Copilot Prompt DB</span>
+        <input type="text" id="page-title-input" onblur="savePageTitle()" onkeydown="if(event.key==='Enter') savePageTitle()">
+        <div id="cloud-status"><span class="status-dot online"></span> 雲端同步中 | ⚡ AI Ready</div>
     </div>
     
     <div class="toolbar">
@@ -100,35 +87,27 @@
         <button class="btn-secondary" onclick="exportJSON()">📤 匯出備份</button>
         <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)">
         <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📥 匯入取代</button>
-        <button class="btn-secondary" style="background-color: #34495e;" onclick="clearConfig()">⚙️ 重設雲端</button>
+        <button class="btn-secondary" style="background-color: #34495e;" onclick="clearConfig()">⚙️ 重設系統</button>
     </div>
 
-    <div id="database-container">
-        </div>
+    <div id="database-container"></div>
 
 <script>
-    // --- 核心變數與設定 ---
     let db;
     let firebaseConfig = JSON.parse(localStorage.getItem('fb_config'));
     let secretPath = localStorage.getItem('fb_secret_path') || "default";
-
-    // 優先讀取 Local 舊資料，防止未連線前白屏
+    let openRouterKey = localStorage.getItem('or_key') || "";
     let database = JSON.parse(localStorage.getItem('myAdvancedPrompts_v3')) || [];
-    let savedPageTitle = localStorage.getItem('myPageTitle') || "🧠 My Prompt Database";
-    
+    let savedPageTitle = localStorage.getItem('myPageTitle') || "🧠 My AI Copilot Prompt DB";
     const baseHues = [210, 150, 35, 350, 270, 180]; 
-    let elementToFocus = null; 
-    let dragData = null; 
-    let clickTimer = null;
+    let elementToFocus = null; let dragData = null; let clickTimer = null;
 
-    // --- 初始化 ---
     window.onload = function() {
         document.getElementById('page-title-text').innerText = savedPageTitle;
         document.title = savedPageTitle;
-
         if (!firebaseConfig) {
             document.getElementById('setup-overlay').style.display = 'flex';
-            render(); // 喺未設定雲端前，先顯示本機資料
+            render(); 
         } else {
             document.getElementById('cloud-status').style.display = 'block';
             initFirebase();
@@ -141,48 +120,77 @@
             databaseURL: document.getElementById('conf-databaseURL').value,
             projectId: document.getElementById('conf-projectId').value,
         };
-        const secret = document.getElementById('conf-secretKey').value || "my_secret_db";
-        
         localStorage.setItem('fb_config', JSON.stringify(config));
-        localStorage.setItem('fb_secret_path', secret);
+        localStorage.setItem('fb_secret_path', document.getElementById('conf-secretKey').value || "my_secret_db");
+        localStorage.setItem('or_key', document.getElementById('conf-openRouterKey').value);
         location.reload();
     }
 
     function clearConfig() {
-        if(confirm("確定要重設雲端連線資料？(唔會刪除你嘅 Prompt，只係登出雲端)")) {
-            localStorage.removeItem('fb_config');
-            localStorage.removeItem('fb_secret_path');
-            location.reload();
+        if(confirm("確定要重設雲端及 AI 連線資料？")) {
+            localStorage.clear(); location.reload();
         }
     }
 
-    // --- Firebase 雲端邏輯 ---
+    // --- AI API Call 核心邏輯 ---
+    async function callAI(prompt) {
+        if(!openRouterKey) { alert("未設定 OpenRouter API Key！請重設系統輸入。"); return null; }
+        try {
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${openRouterKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "model": "meta-llama/llama-3-8b-instruct:free", // 使用免費 Llama 3
+                    "messages": [{"role": "user", "content": prompt}]
+                })
+            });
+            const data = await res.json();
+            return data.choices[0].message.content.trim();
+        } catch(e) {
+            alert("AI 連線失敗，請稍後再試。"); return null;
+        }
+    }
+
+    async function aiOptimizePrompt(catId, pId) {
+        const textarea = document.getElementById(`prompt-textarea-${pId}`);
+        const originalText = textarea.value;
+        if(!originalText.trim()) { alert("請先打啲字，AI 先有得幫你優化！"); return; }
+        textarea.value = "✨ AI 正在努力優化中，請稍候...";
+        const aiPrompt = `請將以下用口語寫嘅要求，重寫成一個高效率、邏輯清晰、少 Token 且無文法錯誤嘅 AI 提示詞。請直接輸出優化後嘅結果，唔好加任何解釋或前言：\n\n${originalText}`;
+        const result = await callAI(aiPrompt);
+        if(result) {
+            textarea.value = result;
+            savePromptEdit(catId, pId);
+        } else { textarea.value = originalText; }
+    }
+
+    async function aiRecommendTitle(catId, pId, event) {
+        event.stopPropagation();
+        const input = document.getElementById(`prompt-input-${pId}`);
+        const content = document.getElementById(`prompt-textarea-${pId}`).value;
+        if(!content.trim()) { alert("請先填寫 Prompt 內容，AI 先有得參考！"); return; }
+        const oldTitle = input.value;
+        input.value = "💡 AI 思考中...";
+        const aiPrompt = `請根據以下提示詞內容，生成 1 個簡潔精準、方便分類嘅標題（不多於 12 個字）。請直接輸出標題，唔好加引號或任何解釋：\n\n${content}`;
+        const result = await callAI(aiPrompt);
+        if(result) {
+            input.value = result.replace(/["']/g, ''); 
+            savePromptEdit(catId, pId);
+        } else { input.value = oldTitle; }
+    }
+
+    // --- Firebase 與渲染 ---
     function initFirebase() {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.database();
+        firebase.initializeApp(firebaseConfig); db = firebase.database();
         let isFirstLoad = true;
-        
         db.ref('users/' + secretPath).on('value', (snapshot) => {
             const data = snapshot.val();
-            
-            // 智能合併：如果雲端係空嘅，但你電腦有舊資料，就自動幫你 Push 上雲端！
-            if (isFirstLoad && !data && database.length > 0) {
-                syncToCloud();
-                isFirstLoad = false;
-                return;
-            }
+            if (isFirstLoad && !data && database.length > 0) { syncToCloud(); isFirstLoad = false; return; }
             isFirstLoad = false;
-
             if (data) {
-                database = data.database || [];
-                savedPageTitle = data.pageTitle || "🧠 My Prompt Database";
-                document.getElementById('page-title-text').innerText = savedPageTitle;
-                document.title = savedPageTitle;
-            } else {
-                database = [];
-            }
-            
-            // 同時備份落本機
+                database = data.database || []; savedPageTitle = data.pageTitle || "🧠 My AI Copilot Prompt DB";
+                document.getElementById('page-title-text').innerText = savedPageTitle; document.title = savedPageTitle;
+            } else { database = []; }
             localStorage.setItem('myAdvancedPrompts_v3', JSON.stringify(database));
             localStorage.setItem('myPageTitle', savedPageTitle);
             render();
@@ -190,110 +198,62 @@
     }
 
     function syncToCloud() {
-        if (db) {
-            db.ref('users/' + secretPath).set({
-                database: database,
-                pageTitle: savedPageTitle
-            });
-        }
+        if (db) db.ref('users/' + secretPath).set({ database: database, pageTitle: savedPageTitle });
     }
-
-    // --- 儲存邏輯樞紐 ---
     function saveData() {
         localStorage.setItem('myAdvancedPrompts_v3', JSON.stringify(database));
-        if (db) {
-            syncToCloud(); // 觸發雲端同步 -> 自動觸發 render
-        } else {
-            render(); // 離線狀態直接 render
-        }
+        if (db) syncToCloud(); else render();
     }
-
     function savePageTitle() {
         const input = document.getElementById('page-title-input');
-        const text = document.getElementById('page-title-text');
-        if(input.value.trim() !== "") {
-            savedPageTitle = input.value;
-            localStorage.setItem('myPageTitle', savedPageTitle);
-            text.innerText = savedPageTitle;
-            document.title = savedPageTitle;
-            if(db) syncToCloud(); // 同步標題更改
-        }
-        input.style.display = 'none';
-        text.style.display = 'inline-block';
+        if(input.value.trim() !== "") { savedPageTitle = input.value; saveData(); }
+        input.style.display = 'none'; document.getElementById('page-title-text').style.display = 'inline-block';
     }
-
     function editPageTitle() {
         const input = document.getElementById('page-title-input');
-        const text = document.getElementById('page-title-text');
-        input.value = savedPageTitle;
-        text.style.display = 'none';
-        input.style.display = 'block';
-        input.focus();
-        input.select();
+        input.value = savedPageTitle; document.getElementById('page-title-text').style.display = 'none';
+        input.style.display = 'block'; input.focus(); input.select();
     }
 
-    // --- 渲染畫面 (完整保留 03.html 嘅靚靚 UI) ---
     function render() {
         const container = document.getElementById('database-container');
         container.innerHTML = '';
-
         database.forEach((cat, catIndex) => {
             const hue = baseHues[catIndex % baseHues.length];
-            const catBgColor = `hsl(${hue}, 70%, 85%)`;
-            const catBorderColor = `hsl(${hue}, 70%, 45%)`;
-
-            const catDiv = document.createElement('div');
-            catDiv.className = 'category-box';
-            catDiv.style.borderLeft = `6px solid ${catBorderColor}`;
-            
+            const catDiv = document.createElement('div'); catDiv.className = 'category-box';
+            catDiv.style.borderLeft = `6px solid hsl(${hue}, 70%, 45%)`;
             let catHTML = `
-                <div class="category-header" id="cat-header-${cat.id}" tabindex="0"
-                     style="background-color: ${catBgColor};"
-                     onclick="handleSingleClick(event, 'cat-body-${cat.id}')"
-                     ondblclick="editCategory(${cat.id})"
-                     onkeydown="handleKeyMove(event, 'cat', ${catIndex})"
-                     draggable="true" ondragstart="dragStart(event, 'cat', ${catIndex})" ondragover="dragOver(event)" ondrop="drop(event, 'cat', ${catIndex})">
-                    
+                <div class="category-header" id="cat-header-${cat.id}" tabindex="0" style="background-color: hsl(${hue}, 70%, 85%);" onclick="handleSingleClick(event, 'cat-body-${cat.id}')" ondblclick="editCategory(${cat.id})" onkeydown="handleKeyMove(event, 'cat', ${catIndex})" draggable="true" ondragstart="dragStart(event, 'cat', ${catIndex})" ondragover="dragOver(event)" ondrop="drop(event, 'cat', ${catIndex})">
                     <span class="arrow-icon" id="icon-cat-body-${cat.id}">▶</span>
-                    <span class="title-text" id="cat-text-${cat.id}" style="margin-left: 10px;">${cat.topic || '<span style="color:#7f8c8d; font-style:italic;">(未命名 Topic)</span>'}</span>
-                    <input type="text" class="edit-input" id="cat-input-${cat.id}" value="${cat.topic}" placeholder="請輸入 Topic 名稱 (撳 Enter 儲存)..." 
-                           onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" onkeydown="handleInputKey(event, 'cat', ${cat.id})">
-                    
+                    <span class="title-text" id="cat-text-${cat.id}">${cat.topic || '<span style="color:#7f8c8d; font-style:italic;">(未命名 Topic)</span>'}</span>
+                    <input type="text" class="edit-input" id="cat-input-${cat.id}" value="${cat.topic}" placeholder="請輸入 Topic 名稱..." onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" onkeydown="handleInputKey(event, 'cat', ${cat.id})">
                     <div style="flex-grow: 1;"></div>
                     <button class="btn-success" onclick="addPrompt(${cat.id}, event)" style="padding: 4px 8px; font-size: 0.8em;">➕ 加 Prompt</button>
                     <button class="btn-danger" onclick="deleteCategory(${cat.id}, event)" style="padding: 4px 8px; font-size: 0.8em; margin-left:5px;">🗑️</button>
                 </div>
                 <div class="category-body" id="cat-body-${cat.id}">
             `;
-
             if (!cat.prompts || cat.prompts.length === 0) {
-                catHTML += `<p style="color:#999; text-align:center; font-style:italic;">呢個分類仲未有 Prompt，撳右上角新增啦！</p>`;
+                catHTML += `<p style="color:#999; text-align:center;">呢個分類仲未有 Prompt，撳右上角新增啦！</p>`;
             } else {
                 cat.prompts.forEach((p, pIndex) => {
                     const lightness = Math.max(75, 95 - (pIndex * 4)); 
-                    const promptBgColor = `hsl(${hue}, 60%, ${lightness}%)`;
-
                     catHTML += `
                         <div class="prompt-card">
-                            <div class="card-header" id="prompt-header-${p.id}" tabindex="0"
-                                 style="background-color: ${promptBgColor};"
-                                 onclick="handleSingleClick(event, 'prompt-body-${p.id}')"
-                                 ondblclick="togglePromptEdit(${cat.id}, ${p.id})"
-                                 onkeydown="handleKeyMove(event, 'prompt', ${catIndex}, ${pIndex})"
-                                 draggable="true" ondragstart="dragStart(event, 'prompt', ${catIndex}, ${pIndex})" ondragover="dragOver(event)" ondrop="drop(event, 'prompt', ${catIndex}, ${pIndex})">
-                                
+                            <div class="card-header" id="prompt-header-${p.id}" tabindex="0" style="background-color: hsl(${hue}, 60%, ${lightness}%);" onclick="handleSingleClick(event, 'prompt-body-${p.id}')" ondblclick="togglePromptEdit(${cat.id}, ${p.id})" onkeydown="handleKeyMove(event, 'prompt', ${catIndex}, ${pIndex})" draggable="true" ondragstart="dragStart(event, 'prompt', ${catIndex}, ${pIndex})" ondragover="dragOver(event)" ondrop="drop(event, 'prompt', ${catIndex}, ${pIndex})">
                                 <span class="arrow-icon" id="icon-prompt-body-${p.id}">▶</span>
-                                <span class="title-text" id="prompt-text-${p.id}" style="margin-left: 10px;">${p.subheading || '<span style="color:#7f8c8d; font-style:italic;">(未命名 Subheading)</span>'}</span>
-                                <input type="text" class="edit-input" id="prompt-input-${p.id}" value="${p.subheading}" placeholder="請輸入 Subheading (例如：解決客訴用)..." 
-                                       onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
+                                <span class="title-text" id="prompt-text-${p.id}">${p.subheading || '<span style="color:#7f8c8d; font-style:italic;">(未命名 Subheading)</span>'}</span>
+                                <div style="display:flex; width:100%; align-items:center;">
+                                    <input type="text" class="edit-input" id="prompt-input-${p.id}" value="${p.subheading}" placeholder="請輸入 Subheading..." onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
+                                    <button class="btn-ai" id="ai-btn-title-${p.id}" style="display:none; padding:4px 8px; margin-left:5px; font-size:12px;" onclick="aiRecommendTitle(${cat.id}, ${p.id}, event)">💡 AI 推薦</button>
+                                </div>
                             </div>
-                            
                             <div class="card-body" id="prompt-body-${p.id}">
                                 <div class="content-display" id="prompt-display-${p.id}">${p.content || '<span style="color:#aaa; font-style:italic;">(請輸入 Prompt 內容)</span>'}</div>
                                 <textarea id="prompt-textarea-${p.id}" placeholder="請輸入你的 Prompt 詳細內容...">${p.content}</textarea>
-                                
                                 <div class="action-bar">
-                                    <button id="prompt-save-btn-${p.id}" class="btn-success" style="display:none;" onclick="savePromptEdit(${cat.id}, ${p.id})">💾 儲存修改</button>
+                                    <button class="btn-ai" id="ai-btn-prompt-${p.id}" style="display:none;" onclick="aiOptimizePrompt(${cat.id}, ${p.id})">✨ AI 優化內容</button>
+                                    <button id="prompt-save-btn-${p.id}" class="btn-success" style="display:none;" onclick="savePromptEdit(${cat.id}, ${p.id})">💾 儲存</button>
                                     <button onclick="copyPrompt(${p.id})">📋 複製</button>
                                     <button onclick="duplicatePrompt(${cat.id}, ${p.id})">➕ 衍生新版</button>
                                     <button class="btn-danger" onclick="deletePrompt(${cat.id}, ${p.id})">🗑️ 刪除</button>
@@ -303,214 +263,86 @@
                     `;
                 });
             }
-            
-            catHTML += `</div>`;
-            catDiv.innerHTML = catHTML;
-            container.appendChild(catDiv);
+            catHTML += `</div>`; catDiv.innerHTML = catHTML; container.appendChild(catDiv);
         });
-
-        if(elementToFocus) {
-            const el = document.getElementById(elementToFocus);
-            if(el) { el.focus(); }
-            elementToFocus = null;
-        }
+        if(elementToFocus) { const el = document.getElementById(elementToFocus); if(el) el.focus(); elementToFocus = null; }
     }
 
-    // --- 以下為 03.html 原汁原味嘅互動功能 ---
     function handleSingleClick(event, bodyId) {
         if(event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
         if(clickTimer) clearTimeout(clickTimer);
         clickTimer = setTimeout(() => { toggleElement(bodyId); }, 250);
     }
-
-    function toggleElement(elementId) {
-        const el = document.getElementById(elementId);
-        const icon = document.getElementById(`icon-${elementId}`);
-        if(el.classList.contains('open')) {
-            el.classList.remove('open');
-            icon.style.transform = "rotate(0deg)";
-        } else {
-            el.classList.add('open');
-            icon.style.transform = "rotate(90deg)";
-        }
+    function toggleElement(id) {
+        const el = document.getElementById(id); const icon = document.getElementById(`icon-${id}`);
+        el.classList.toggle('open'); icon.style.transform = el.classList.contains('open') ? "rotate(90deg)" : "rotate(0deg)";
     }
-
     function handleKeyMove(e, type, catIndex, pIndex = null) {
         if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        if(e.key === 'ArrowUp') {
-            e.preventDefault();
-            if(type === 'cat' && catIndex > 0) {
-                [database[catIndex - 1], database[catIndex]] = [database[catIndex], database[catIndex - 1]];
-                elementToFocus = `cat-header-${database[catIndex - 1].id}`;
-                saveData();
-            } else if(type === 'prompt' && pIndex > 0) {
+        if(e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault(); const dir = e.key === 'ArrowUp' ? -1 : 1;
+            if(type === 'cat' && database[catIndex + dir]) {
+                [database[catIndex], database[catIndex + dir]] = [database[catIndex + dir], database[catIndex]];
+                elementToFocus = `cat-header-${database[catIndex + dir].id}`; saveData();
+            } else if(type === 'prompt' && database[catIndex].prompts[pIndex + dir]) {
                 const cat = database[catIndex];
-                [cat.prompts[pIndex - 1], cat.prompts[pIndex]] = [cat.prompts[pIndex], cat.prompts[pIndex - 1]];
-                elementToFocus = `prompt-header-${cat.prompts[pIndex - 1].id}`;
-                saveData();
-            }
-        } else if(e.key === 'ArrowDown') {
-            e.preventDefault();
-            if(type === 'cat' && catIndex < database.length - 1) {
-                [database[catIndex], database[catIndex + 1]] = [database[catIndex + 1], database[catIndex]];
-                elementToFocus = `cat-header-${database[catIndex + 1].id}`;
-                saveData();
-            } else if(type === 'prompt' && pIndex < database[catIndex].prompts.length - 1) {
-                const cat = database[catIndex];
-                [cat.prompts[pIndex], cat.prompts[pIndex + 1]] = [cat.prompts[pIndex + 1], cat.prompts[pIndex]];
-                elementToFocus = `prompt-header-${cat.prompts[pIndex + 1].id}`;
-                saveData();
+                [cat.prompts[pIndex], cat.prompts[pIndex + dir]] = [cat.prompts[pIndex + dir], cat.prompts[pIndex]];
+                elementToFocus = `prompt-header-${cat.prompts[pIndex + dir].id}`; saveData();
             }
         }
     }
-
     function dragStart(e, type, catIndex, pIndex = null) {
         if(e.target.tagName === 'INPUT') { e.preventDefault(); return; } 
-        dragData = { type, catIndex, pIndex };
-        e.dataTransfer.effectAllowed = "move";
+        dragData = { type, catIndex, pIndex }; e.dataTransfer.effectAllowed = "move";
     }
     function dragOver(e) { e.preventDefault(); }
     function drop(e, targetType, targetCatIndex, targetPIndex = null) {
-        e.preventDefault();
-        if(!dragData || dragData.type !== targetType) return; 
-
+        e.preventDefault(); if(!dragData || dragData.type !== targetType) return; 
         if(targetType === 'cat' && dragData.catIndex !== targetCatIndex) {
-            const item = database.splice(dragData.catIndex, 1)[0];
-            database.splice(targetCatIndex, 0, item);
-            saveData();
+            const item = database.splice(dragData.catIndex, 1)[0]; database.splice(targetCatIndex, 0, item); saveData();
         } else if(targetType === 'prompt' && dragData.catIndex === targetCatIndex && dragData.pIndex !== targetPIndex) {
-            const cat = database[targetCatIndex];
-            const item = cat.prompts.splice(dragData.pIndex, 1)[0];
-            cat.prompts.splice(targetPIndex, 0, item);
-            saveData();
+            const cat = database[targetCatIndex]; const item = cat.prompts.splice(dragData.pIndex, 1)[0]; cat.prompts.splice(targetPIndex, 0, item); saveData();
         }
         dragData = null;
     }
-
-    function addCategory() {
-        const newCat = { id: Date.now(), topic: "", prompts: [] };
-        database.unshift(newCat);
-        saveData();
-        document.getElementById(`cat-body-${newCat.id}`).classList.add('open');
-        document.getElementById(`icon-cat-body-${newCat.id}`).style.transform = "rotate(90deg)";
-        editCategory(newCat.id);
-    }
-
+    function addCategory() { const newCat = { id: Date.now(), topic: "", prompts: [] }; database.unshift(newCat); saveData(); document.getElementById(`cat-body-${newCat.id}`).classList.add('open'); editCategory(newCat.id); }
     function editCategory(catId) {
         if(clickTimer) clearTimeout(clickTimer);
-        const textEl = document.getElementById(`cat-text-${catId}`);
-        const inputEl = document.getElementById(`cat-input-${catId}`);
-        const headerEl = document.getElementById(`cat-header-${catId}`);
-        
-        headerEl.draggable = false;
-        textEl.style.display = 'none';
-        inputEl.style.display = 'block';
-        inputEl.focus();
+        document.getElementById(`cat-header-${catId}`).draggable = false;
+        document.getElementById(`cat-text-${catId}`).style.display = 'none';
+        const input = document.getElementById(`cat-input-${catId}`); input.style.display = 'block'; input.focus();
     }
-
-    function handleInputKey(e, type, id) {
-        if(e.key === 'Enter') {
-            if(type === 'cat') {
-                const cat = database.find(c => c.id === id);
-                cat.topic = document.getElementById(`cat-input-${id}`).value;
-                saveData();
-            }
-        }
-    }
-
+    function handleInputKey(e, type, id) { if(e.key === 'Enter' && type === 'cat') { database.find(c => c.id === id).topic = document.getElementById(`cat-input-${id}`).value; saveData(); } }
     function addPrompt(catId, event) {
-        event.stopPropagation();
-        const cat = database.find(c => c.id === catId);
-        const newPromptId = Date.now();
-        if(!cat.prompts) cat.prompts = [];
-        cat.prompts.unshift({ id: newPromptId, subheading: "", content: "" });
-        saveData();
-        
-        document.getElementById(`cat-body-${catId}`).classList.add('open');
-        document.getElementById(`icon-cat-body-${catId}`).style.transform = "rotate(90deg)";
-        document.getElementById(`prompt-body-${newPromptId}`).classList.add('open');
-        document.getElementById(`icon-prompt-body-${newPromptId}`).style.transform = "rotate(90deg)";
-        
-        togglePromptEdit(catId, newPromptId); 
+        event.stopPropagation(); const cat = database.find(c => c.id === catId); const newPromptId = Date.now();
+        if(!cat.prompts) cat.prompts = []; cat.prompts.unshift({ id: newPromptId, subheading: "", content: "" }); saveData();
+        document.getElementById(`cat-body-${catId}`).classList.add('open'); document.getElementById(`prompt-body-${newPromptId}`).classList.add('open'); togglePromptEdit(catId, newPromptId); 
     }
-
     function togglePromptEdit(catId, promptId) {
         if(clickTimer) clearTimeout(clickTimer); 
+        document.getElementById(`prompt-header-${promptId}`).draggable = false;
+        document.getElementById(`prompt-text-${promptId}`).style.display = 'none';
+        document.getElementById(`prompt-display-${promptId}`).style.display = 'none';
         
-        const textEl = document.getElementById(`prompt-text-${promptId}`);
+        // 顯示編輯框及 AI 按鈕
         const inputEl = document.getElementById(`prompt-input-${promptId}`);
-        const displayEl = document.getElementById(`prompt-display-${promptId}`);
-        const textareaEl = document.getElementById(`prompt-textarea-${promptId}`);
-        const saveBtn = document.getElementById(`prompt-save-btn-${promptId}`);
-        const headerEl = document.getElementById(`prompt-header-${promptId}`);
-
-        headerEl.draggable = false;
-        textEl.style.display = 'none';
-        displayEl.style.display = 'none';
-        inputEl.style.display = 'block';
-        textareaEl.style.display = 'block';
-        saveBtn.style.display = 'inline-block';
-        
-        inputEl.focus();
+        inputEl.style.display = 'block'; inputEl.focus();
+        document.getElementById(`prompt-textarea-${promptId}`).style.display = 'block';
+        document.getElementById(`prompt-save-btn-${promptId}`).style.display = 'inline-block';
+        document.getElementById(`ai-btn-title-${promptId}`).style.display = 'inline-block';
+        document.getElementById(`ai-btn-prompt-${promptId}`).style.display = 'inline-block';
     }
-
     function savePromptEdit(catId, promptId) {
-        const cat = database.find(c => c.id === catId);
-        const prompt = cat.prompts.find(p => p.id === promptId);
+        const cat = database.find(c => c.id === catId); const prompt = cat.prompts.find(p => p.id === promptId);
         prompt.subheading = document.getElementById(`prompt-input-${promptId}`).value;
-        prompt.content = document.getElementById(`prompt-textarea-${promptId}`).value;
-        saveData();
+        prompt.content = document.getElementById(`prompt-textarea-${promptId}`).value; saveData();
     }
-
-    function deleteCategory(catId, event) {
-        event.stopPropagation();
-        if(confirm("確定要刪除整個 Topic 同入面所有 Prompt？！")) {
-            database = database.filter(c => c.id !== catId);
-            saveData();
-        }
-    }
-    function deletePrompt(catId, promptId) {
-        if(confirm("確定要刪除呢個 Prompt 嗎？")) {
-            const cat = database.find(c => c.id === catId);
-            cat.prompts = cat.prompts.filter(p => p.id !== promptId);
-            saveData();
-        }
-    }
-    function duplicatePrompt(catId, promptId) {
-        const cat = database.find(c => c.id === catId);
-        const original = cat.prompts.find(p => p.id === promptId);
-        const index = cat.prompts.findIndex(p => p.id === promptId);
-        const newId = Date.now();
-        cat.prompts.splice(index + 1, 0, { id: newId, subheading: original.subheading + " (Version 2)", content: original.content });
-        saveData();
-    }
-    function copyPrompt(promptId) {
-        const text = document.getElementById(`prompt-textarea-${promptId}`).value;
-        if(!text) { alert("呢個 Prompt 冇內容喎！"); return; }
-        navigator.clipboard.writeText(text).then(() => alert('✅ Prompt 已經成功複製！'));
-    }
-    
-    // 依然保留手動 Export/Import 以防萬一
-    function exportJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(database, null, 2));
-        const dl = document.createElement('a');
-        dl.setAttribute("href", dataStr);
-        dl.setAttribute("download", "my_pro_prompts.json");
-        document.body.appendChild(dl); dl.click(); dl.remove();
-    }
-    function importJSON(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                database = JSON.parse(e.target.result);
-                saveData(); alert("✅ 成功匯入 Database！");
-            } catch (error) { alert("❌ 檔案格式出錯！"); }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-    }
+    function deleteCategory(catId, event) { event.stopPropagation(); if(confirm("確定刪除 Topic？")) { database = database.filter(c => c.id !== catId); saveData(); } }
+    function deletePrompt(catId, promptId) { if(confirm("確定刪除 Prompt？")) { const cat = database.find(c => c.id === catId); cat.prompts = cat.prompts.filter(p => p.id !== promptId); saveData(); } }
+    function duplicatePrompt(catId, promptId) { const cat = database.find(c => c.id === catId); const original = cat.prompts.find(p => p.id === promptId); const index = cat.prompts.findIndex(p => p.id === promptId); cat.prompts.splice(index + 1, 0, { id: Date.now(), subheading: original.subheading + " (Version 2)", content: original.content }); saveData(); }
+    function copyPrompt(promptId) { const text = document.getElementById(`prompt-textarea-${promptId}`).value; if(!text) return; navigator.clipboard.writeText(text).then(() => alert('✅ 複製成功！')); }
+    function exportJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(database, null, 2)); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "my_pro_prompts.json"); document.body.appendChild(dl); dl.click(); dl.remove(); }
+    function importJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { database = JSON.parse(e.target.result); saveData(); alert("✅ 匯入成功！"); } catch (error) { alert("❌ 檔案出錯！"); } }; reader.readAsText(file); event.target.value = ''; }
 </script>
 
 </body>
