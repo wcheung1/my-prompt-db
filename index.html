@@ -98,6 +98,7 @@
     
     <div class="toolbar">
         <button class="btn-success" onclick="addCategory()">📁 新增 Topic (大分類)</button>
+        <button onclick="toggleSearchBar()">🔍 搜尋</button>
         <div style="flex-grow: 1;"></div>
         <button class="btn-ai" onclick="setupAI()">🤖 設定 AI</button>
         <button class="btn-secondary" onclick="exportJSON()">📤 匯出備份</button>
@@ -258,6 +259,15 @@
             closeSearch();
         }
     });
+
+    function toggleSearchBar() {
+        // 手機用嘅搜尋掉：效果同 Ctrl + F 一樣，再撑一次就關閉
+        if (document.getElementById('search-bar').classList.contains('active')) {
+            closeSearch();
+        } else {
+            openSearch();
+        }
+    }
 
     function openSearch() {
         const bar = document.getElementById('search-bar');
